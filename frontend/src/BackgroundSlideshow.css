@@ -1,21 +1,21 @@
-.background-slideshow {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: -1;
-  object-fit: cover;
-}
+/* carousel-custom.css */
 
 .carousel .slide {
-  background: none;
+  background: none !important;
 }
 
-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.carousel .thumbs-wrapper {
+  display: flex;
+  justify-content: center;
 }
 
+.carousel .carousel-slider {
+  display: flex;
+  justify-content: flex-start; /* align the images to the left */
+}
 
+.carousel .carousel-slider img {
+  object-fit: none; /* prevent stretching */
+  max-width: 40%; /* adjust this value to control the image size */
+  height: auto;
+}
