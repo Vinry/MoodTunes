@@ -10,7 +10,11 @@ const BackgroundSlideshow = ({ images }) => {
 
   return (
     <div className="slide-container">
-      <Fade>
+      <Fade
+        duration={5000} // Duration of each slide in milliseconds
+        transitionDuration={1000} // Duration of the transition between slides in milliseconds
+        arrows={false} // Disable arrows for navigation
+      >
         {images.map((image, index) => (
           <div key={index}>
             <img style={{ width: '100%', height: '100%', objectFit: 'cover' }} src={image} />

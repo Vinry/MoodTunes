@@ -20,9 +20,9 @@ async function fetchGeneratedText(prompt) {
   }
 }
 
-async function generateImage(prompt) {
+async function generateImage(prompt, trackName, artistName) {
   try {
-    const response = await api.post('/api/generate-image', { prompt });
+    const response = await api.post('/api/generate-image', { prompt, trackName, artistName });
     if (response.status === 200) {
       return response.data.url;
     } else {
@@ -35,9 +35,30 @@ async function generateImage(prompt) {
   }
 }
 
+async function getImages(trackName, artistName) {
+  try {
+    const response = await api.post('/api/get-images', { trackName, artistName });
+    if (response.status === 200) {
+      console.log(response.data);
+      return response.data;
+    } else {
+      console.error('Error getting images:', response.status, response.statusText);
+      return null;
+    }
+  } catch (err) {
+    console.error(err);
+    return null;
+  }
+}
+
+
+
+
+
 
 export default {
   api,
   fetchGeneratedText,
   generateImage,
+  getImages,
 };
