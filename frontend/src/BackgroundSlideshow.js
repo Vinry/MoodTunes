@@ -5,6 +5,7 @@ import './BackgroundSlideshow.css';
 import { Fade } from 'react-slideshow-image';
 import 'react-slideshow-image/dist/styles.css'
 
+
 const BackgroundSlideshow = ({ images }) => {
   console.log('Images:', images);
 
@@ -24,31 +25,4 @@ const BackgroundSlideshow = ({ images }) => {
     </div>
   );
 };
-/*
-function BackgroundSlideshow() {
-  return (
-    <div className="background-slideshow">
-      <Carousel
-        showThumbs={false}
-        showStatus={false}
-        showIndicators={false}
-        autoPlay
-        infiniteLoop
-        interval={5000}
-        transitionTime={1000}
-      >
-        <div>
-          <img src="image1.jpeg" alt="Background 1" />
-        </div>
-        <div>
-          <img src="image2.jpeg" alt="Background 2" />
-        </div>
-        <div>
-          <img src="image3.jpeg" alt="Background 3" />
-        </div>
-      </Carousel>
-    </div>
-  );
-}
-*/
 export default BackgroundSlideshow;

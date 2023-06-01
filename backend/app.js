@@ -8,6 +8,15 @@ const { generateText } = require('./openai');
 const { fetchLyrics } = require('./lyricsApi');
 const { generateImage } = require('./openai');
 const fs = require("fs");
+const userRoutes = require('./routes/userRoutes');
+const { saveImageToUser } = require('./models/User');
+const ObjectId = require('mongodb').ObjectId;
+
+const userDB = require('./models/User');
+
+userDB.connect().then(() => {
+  console.log('Connected to MongoDB');
+}).catch(err => console.error(err));
 
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const uri = "mongodb+srv://marrelarsson:HzLFhGRGVpqP1fVm@cluster0.zspk9il.mongodb.net/?retryWrites=true&w=majority";
@@ -21,41 +30,28 @@ const client = new MongoClient(uri, {
   }
 });
 
+
+
 async function run() {
   try {
-    // Connect the client to the server	(optional starting in v4.7)
+    // Connect the client to the server
     await client.connect();
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
-    /*const database = client.db("test");
-    const collection = database.collection("test1");
-
-    const imagePath = "/home/martin/skola/TDDD27/tddd27_2023_moodtunes/backend/test/image1.jpeg";
-    const imageBuffer = fs.readFileSync(imagePath);
-    const base64Image = imageBuffer.toString("base64");
-    const doc = {
-      title: "Sample Image",
-      content: base64Image,
-    }
-    const result = await collection.insertOne(doc);
-    console.log("doc inserted");*/
   } finally {
-    // Ensures that the client will close when you finish/error
+    // Ensures that the client will close when finished
     await client.close();
   }
 }
 run().catch(console.dir);
-
-
-
 
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 
-
+app.use('/auth', userRoutes);
 
 app.use(
   session({
@@ -86,6 +82,7 @@ passport.deserializeUser((user, done) => {
   done(null, user);
 });
 
+// not being used right now
 app.get('/auth/spotify', passport.authenticate('spotify', { scope: ['user-read-email', 'user-read-private'] }));
 
 app.get(
@@ -122,8 +119,10 @@ async function searchImagesInDatabase(trackName, artistName) {
 
     if (imageDocs.length > 0) {
       console.log("Images found");
-      const base64Images = imageDocs.map((doc) => doc.content);
-      return base64Images;
+      //const base64Images = imageDocs.map((doc) => doc.content);
+      //const imageIds = imageDocs.map((doc) => doc._id.toString());
+      //return { base64Images, imageIds };
+      return imageDocs;
     } else {
       console.log("Images not found");
       return null;
@@ -142,17 +141,22 @@ async function searchImagesInDatabase(trackName, artistName) {
 async function getImages(trackName, artistName) {
   // Search for images in the database using trackName and artistName
   const images = await searchImagesInDatabase(trackName, artistName);
+  console.log("kommer hit3");
+  console.log(images);
 
-  if (!images || images.length === 0) {
+  if (images == null || !images || images.length === 0) {
     return null;
   }
 
-  // Convert base64-encoded images to data URLs
-  const imageUrls = images.map((base64Image) => {
-    return `data:image/jpeg;base64,${base64Image}`;
-  });
+  // Select a random image from the images array
+  const randomImageDoc = images[Math.floor(Math.random() * images.length)];
 
-  return imageUrls;
+  // Convert base64-encoded image to data URL
+  const imageUrl = `data:image/jpeg;base64,${randomImageDoc.content}`;
+  //console.log(randomImage._id);
+  //console.log(images._id);
+
+  return { imageUrl: imageUrl, imageId: randomImageDoc._id };
 }
 
 
@@ -160,15 +164,94 @@ app.post('/api/get-images', async (req, res) => {
   const { trackName, artistName } = req.body;
 
   try {
-    const imageUrls = await getImages(trackName, artistName);
-    //console.log(imageUrls);
-    res.json({ urls: imageUrls });
+    const imageData = await getImages(trackName, artistName);
+
+    if (imageData == null) {
+      return res.status(404).json({ error: 'No images found' });
+    }
+    res.json(imageData);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'An error occurred while getting images from the database' });
   }
 });
 
+
+app.post('/api/save-image', async (req, res) => {
+  const { username, imageId } = req.body;
+  console.log(imageId);
+
+  try {
+    const saveResult = await saveImageToUser(username, imageId);
+
+    if (saveResult) {
+      res.json({ success: true });
+    } else {
+      res.status(500).json({ error: 'Failed to save image' });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'An error occurred while saving image' });
+  }
+});
+
+app.get('/api/saved-images', async (req, res) => {
+  const { username } = req.query;
+
+  try {
+    const savedImages = await getSavedImagesForUser(username);
+    res.json(savedImages);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'An error occurred while getting saved images' });
+  }
+});
+
+async function getSavedImagesForUser(username) {
+  try {
+    await client.connect();
+
+    const db = client.db("MoodTunes");
+
+    const usersCollection = db.collection("users");
+    const imagesCollection = db.collection("Images");
+
+    // Find the user in the database
+    const user = await usersCollection.findOne({ username });
+
+    if (!user) {
+      console.log(`User ${username} not found`);
+      return null;
+    }
+
+    // If the user has no saved images, return an empty array
+    if (!user.savedImages || user.savedImages.length === 0) {
+      return [];
+    }
+
+    // For each image ID, retrieve the image from the Images collection
+    let savedImages = [];
+    for (let imageId of user.savedImages) {
+      const imageDoc = await imagesCollection.findOne({ _id: new ObjectId(imageId) });
+
+      if (imageDoc) {
+        // Convert the base64-encoded image to a data URL
+        const imageUrl = `data:image/jpeg;base64,${imageDoc.content}`;
+        console.log(imageUrl);
+        savedImages.push(imageUrl);
+      } else {
+        console.warn(`Image with ID ${imageId} not found`);
+      }
+    }
+
+    return savedImages;
+  } catch (err) {
+    console.error(err);
+    return null;
+  } finally {
+    await client.close();
+  }
+}
 
 
 
@@ -192,6 +275,7 @@ app.post('/api/generate-image', async (req, res) => {
     res.status(500).json({ error: 'An error occurred while generating an image' });
   }
 });
+
 
 app.get('/api/lyrics/:artistName/:trackName', async (req, res) => {
   const { artistName, trackName } = req.params;

@@ -34,7 +34,7 @@ async function generateText(prompt) {
           {role: 'user', content: prompt},
       ],
       //prompt: prompt,
-      max_tokens: 2000,
+      max_tokens: 3000,
       //n: 1,
       stop: null,
       temperature: 1,
@@ -92,7 +92,7 @@ async function generateImage(prompt, trackName, artistName) {
 
     const response = await openai.createImage({
       prompt: prompt,
-      n: 4,
+      n: 1,
       size: '512x512',
     });
 
