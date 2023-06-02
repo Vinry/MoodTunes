@@ -1,3 +1,6 @@
+Link to screencast:
+https://youtu.be/jc18fTbAjZ0
+
 # Functional Specification
 
 ## Project Vision
