@@ -1,75 +1,56 @@
+# MoodTunes
 
-# Functional Specification
+A 2023 web application prototype exploring how song lyrics can be turned into AI-generated background images. It combines a React interface, an Express API, MongoDB storage, and external lyrics and image-generation services.
 
-## Project Vision
+**Status: historical prototype.** The repository preserves an unfinished implementation. It is not deployment-ready, and a working end-to-end setup has not been verified during this cleanup.
 
-MoodTunes is a web application that aims to provide users with an immersive music experience by playing songs from Spotify and generating mood-based background images based on the analyzed sentiment of the lyrics. My hope is that this can be used to create a personalized and visually appealing environment, enhancing the user's connection to the music.
+## What is in the code
 
-## Core Functions
+| Area | Implementation and limitations |
+| --- | --- |
+| Interface | React screens for registration, login, lyrics, generated backgrounds, and saved images. Some component wiring remains incomplete. |
+| Lyrics and image generation | Express routes retrieve lyrics, request an image prompt, generate images, and store image data. The integrations use older APIs and need verification before reuse. |
+| Persistence | MongoDB collections for users and generated images, with references to users' saved images. |
+| Authentication | Password hashing and comparison are implemented, but a successful password login does not establish an authenticated server session. |
+| Spotify | A Passport strategy and callback routes are scaffolded. Spotify search, playback, and a complete Spotify account flow are not implemented. |
 
-1. **User Authentication and Authorization:**
-   - Allow users to sign in using their Spotify account
+The original idea was an immersive music player with backgrounds derived from the mood of the current song. The source only implements parts of that idea; playlist support and reverse image-to-music recommendations remained proposals.
 
-2. **Music Search and Playback:**
-   - Enable users to search for songs, artists, or albums using Spotify
-   - Provide controls for playing, pausing, and skipping tracks.
-   - Display the song's metadata, such as track name, artist, and album cover.
+## Architecture
 
-3. **Lyrics Retrieval:**
-   - Fetch the lyrics of the currently playing song using the song's metadata (track name and artist) via an API, lyrst or MusixMatch.
-   - Option to display the lyrics.
+```mermaid
+flowchart LR
+    UI[React frontend] --> API[Express backend]
+    API --> DB[(MongoDB)]
+    API --> Lyrics[Lyrist lyrics service]
+    API --> AI[OpenAI text and image APIs]
+    API -. unfinished authentication .-> Spotify[Spotify]
+```
 
-4. **Sentiment Analysis:**
-   - Perform sentiment analysis on the fetched lyrics using a natural language processing API (GPT4 most likely).
-   - Determine the mood of the song based on the sentiment analysis results by generating a prompt that captures the mood/feeling of the song.
+- `frontend/src/` contains the interface and HTTP client, currently configured for a backend on `localhost:3001`.
+- `backend/app.js` defines the main API routes.
+- `backend/lyricsApi.js` and `backend/openai.js` contain external service integrations.
+- `backend/models/User.js` contains user persistence and saved-image operations.
+- `backend/passport.js` contains the unfinished Spotify authentication setup.
 
-5. **Background Image Generation or Selection:**
-   - Generate an image or collection of images using AI-driven image generation APIs (Dall-e, stable diffusion etc) based on the generated prompt.
-   - Display the image (or slideshow of images) as the background while the song plays, hopefully creating an immersive visual experience.
+## Configuration
 
-6. **Responsive Design:**
-   - Ensure that the web app offers a responsive design, adapting to various screen sizes and devices for an optimal user experience.
+Example configuration is provided in [`backend/.env.example`](backend/.env.example) and [`frontend/.env.example`](frontend/.env.example). Local `.env` files are ignored by Git. The backend reads its database connection from `MONGODB_URI` and its session secret from `SESSION_SECRET`; configuration errors do not print either value.
 
-## Additional Functions/Wishlist
+For future restoration, create `backend/.env` from its example, use a local development database, and supply your own credentials only when testing the corresponding integration. Never reuse credentials found in repository history. The optional frontend example contains only a development setting.
 
-1. **Ability to regenerate an image if user does not feel it matches.**
-2. **Ability to save song or playlist with matching image/slideshow.**
-3. **Reverse the flow: create/upload image and get song recommendations.**
+These examples do **not** constitute a working installation guide. The manifests do not yet declare every package imported by the source: the backend is missing `openai`, `axios`, and `bcryptjs`, and the frontend is missing `react-slideshow-image`. The backend also imports `mongodb` directly while currently receiving it through another dependency. Compatible dependency versions and service APIs must be selected and verified before attempting to restore the application.
 
-# Technical Specification
+## Known limitations
 
-## Overview
+- Saved-image endpoints accept a caller-supplied username without verifying ownership. The login UI does not enforce server-side authorization.
+- Generation endpoints have no authentication or usage limits. They must not be exposed with real service credentials.
+- Session handling, input validation, error handling, and database connection lifecycles need further work.
+- Frontend imports and component props include incomplete wiring, and image responses are inconsistent between API paths.
+- The backend test command is a placeholder, and the frontend retains its generated starter test. Neither verifies the application workflow.
 
-With this web app, I want to try to use a modern stack with React as the frontend, Node.js with Express.js for the backend, and MongoDB as the database. My goal is to also integrate various APIs, such as Spotify, a lyrics API like Lyrist or MusixMatch. I also want to use APIs for GPT4, stable diffusion or DALL-E separately or use some service that can combine the calls I want to make in one place, maybe MindsDB (unsure) for sentiment analysis and image generation.
+## What a refresh would involve
 
-## Frontend
+A future revival would start with a reproducible local setup and a fixture-based demonstration that does not require paid services. The next steps would be server-side authentication and authorization, consistent API contracts, reliable database connections, explicit dependency declarations, and tests of the main workflow. Only then would it make sense to revisit Spotify playback and live image generation.
 
-**React:** A popular and powerful JavaScript library for building user interfaces. React offers a component-based approach, which I hope will make it easy to manage and scale my app.
-
-## Backend
-
-**Node.js:** A JavaScript runtime that should be a good fit together with react, providing a consistent development experience between frontend and backend.
-
-**Express.js:** Framework for Node.js that I hope will make it easy to mange the various API endpoints in the app.
-
-## Database
-
-**MongoDB:** NoSQL database that should pair well with Node.js. Not sure if Mongoose could also be used for management.
-
-## APIs and Services
-
-**Spotify API:** Integrate Spotify's API to enable users to search, play songs, and fetch the song's metadata.
-
-- Spotify API: https://developer.spotify.com/documentation/web-api
-
-**Lyrics API:** Use a lyrics API, such as Musixmatch, Lyrics.ovh, or Lyrist to fetch the lyrics of the currently playing song. Still undecided.
-
-- Musixmatch API:  https://developer.musixmatch.com/
-- Lyrics.ovh API: https://lyricsovh.docs.apiary.io/
-- Lyrist API: https://github.com/asrvd/lyrist
-
-**AI Services:**
-
-- **GPT-4:** Sentiment analysis or prompt generation for image generation.
-- **Stable diffusion/DALL-E:** Use stable diffusion or DALL-E for image generation based on the analyzed sentiment of the lyrics.
-- **MindsDB or other:** Alternatively, I might try using MindsDB or other service to consolidate AI tasks if possible.
+The current cleanup focuses on documenting the actual state, moving configuration out of source, and removing committed dependencies. It does not present the prototype as a completed or secure product.

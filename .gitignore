@@ -1,0 +1,13 @@
+# Dependencies and generated frontend output
+node_modules/
+build/
+coverage/
+
+# Local configuration; commit examples only
+.env
+.env.*
+!.env.example
+
+# Local tooling output
+*.log
+.DS_Store

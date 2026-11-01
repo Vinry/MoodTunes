@@ -4,7 +4,7 @@ const axios = require('axios');
 const { MongoClient, GridFSBucket, ServerApiVersion } = require('mongodb');
 
 //const { MongoClient, ServerApiVersion } = require('mongodb');
-const uri = "mongodb+srv://marrelarsson:HzLFhGRGVpqP1fVm@cluster0.zspk9il.mongodb.net/?retryWrites=true&w=majority";
+const { mongoUri: uri } = require('./config');
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {

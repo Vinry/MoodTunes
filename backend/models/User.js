@@ -1,5 +1,5 @@
 const { MongoClient } = require('mongodb');
-const uri = "mongodb+srv://marrelarsson:HzLFhGRGVpqP1fVm@cluster0.zspk9il.mongodb.net/?retryWrites=true&w=majority";
+const { mongoUri: uri } = require('../config');
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
 let usersCollection;
